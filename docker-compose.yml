@@ -1,0 +1,6 @@
+services:
+  api:
+    build: .
+    ports:
+      - '3220:3220'
+
