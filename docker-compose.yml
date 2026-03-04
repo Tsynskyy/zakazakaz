@@ -1,6 +1,51 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: marketplace
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d marketplace']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flyway:
+    image: flyway/flyway:10-alpine
+    command: >
+      -url=jdbc:postgresql://postgres:5432/marketplace
+      -user=postgres
+      -password=postgres
+      -connectRetries=10
+      migrate
+    volumes:
+      - ./migrations:/flyway/sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build: .
     ports:
       - '3220:3220'
+    environment:
+      PORT: 3220
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: marketplace
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: jwtaccesssecret
+      JWT_REFRESH_SECRET: jwtrefreshsecret
+      ORDER_RATE_LIMIT_MINUTES: 1
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
 
+volumes:
+  postgres_data:
