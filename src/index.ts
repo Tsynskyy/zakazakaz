@@ -1,17 +1,19 @@
-import express from 'express';
+import { createApp } from './app';
+import { config } from './config';
+import { pool } from './db/pool';
 
-const app = express();
-const port = 3220;
+async function main() {
+  await pool.query('SELECT 1');
+  console.log('DB connected');
 
-app.get('/health', (_req, res) => {
-	res.status(200).json({ status: 'ok' });
+  const app = createApp();
+
+  app.listen(config.port, '0.0.0.0', () => {
+    console.log(`Server started on port ${config.port}`);
+  });
+}
+
+main().catch((err) => {
+  console.error('Server start error:\n', err);
+  process.exit(1);
 });
-
-app.get('/', (_req, res) => {
-	res.sendStatus(200);
-});
-
-app.listen(port, '0.0.0.0', () => {
-	console.log(`Server started on port ${port}`);
-});
-
